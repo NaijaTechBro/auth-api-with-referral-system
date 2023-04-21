@@ -3,16 +3,15 @@ require('dotenv').config();
 const express = require('express');
 const chalk = require('chalk');
 
-
 // Security
 const helmet = require('helmet');
 const cors = require('cors');
 const xss = require('xss-clean');
 
 // Swagger UI
-// const swaggerUI = require("swagger-ui-express");
-// const YAML = require("yamljs");
-// const swaggerJsDocs = YAML.load("./api.yaml");
+const swaggerUI = require("swagger-ui-express");
+const YAML = require("yamljs");
+const swaggerJsDocs = YAML.load("./api.yaml");
 
 const app = express();
 const http = require('http');
@@ -28,7 +27,8 @@ const server  = http.createServer(app);
 const connectDB = require('./config/dbConn');
 
 // Route Import
-
+const authRoutes = require("./routes/authRoutes");
+const userRoutes = require("./routes/userRoutes")
 
 // Connecting to Database Environments
 console.log(chalk.redBright(process.env.NODE_ENV));
@@ -51,8 +51,9 @@ app.use(bodyParser.json())
 
 
 // Routes Middleware
-// app.use("/v1/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerJsDocs));
-
+app.use("/api/v1/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerJsDocs));
+app.use("/api/v1,", authRoutes);
+app.use("/api/v1", userRoutes);
 
 
 // Routes

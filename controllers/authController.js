@@ -31,12 +31,12 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   const newReferralCode = generateReferralCode();
-  const referrer = await User.findOne({ referralCode });
+  const referrer = await User.findOne({ referralCode, email });
 
-  // Check if user email already exists
-  const userExists = await User.findOne({ email });
+  // // Check if user email already exists
+  // const userExists = await User.findOne({ email });
 
-  if (userExists) {
+  if (referrer) {
     res.status(400);
     throw new Error("Email has already been registered");
   }
@@ -819,7 +819,6 @@ const sendAutomatedEmail = asyncHandler(async (req, res) => {
 
 module.exports = {
   registerUser,
-  getRegisterPage,
   sendVerificationEmail,
   verifyUser,
   loginUser,
