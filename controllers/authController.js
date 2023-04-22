@@ -21,22 +21,30 @@ const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, referralCode } = req.body;
 
   // Validation
+  //body
   if (!name || !email || !password || !referralCode) {
     res.status(400);
     throw new Error("Please fill in all required fields");
   }
+  //pass
   if (password.length < 6) {
     res.status(400);
     throw new Error("Password must be up to 6 characters");
   }
 
+  // Generate referralcode
   const newReferralCode = generateReferralCode();
-  const referrer = await User.findOne({ referralCode, email });
-
-  // // Check if user email already exists
-  // const userExists = await User.findOne({ email });
-
+  const referrer = await User.findOne({ referralCode});
+  
   if (referrer) {
+    res.status(400);
+    throw new Error("user already exits");
+  }
+
+  // Check if user email already exists
+  const userExists = await User.findOne({ email });
+
+  if (userExists) {
     res.status(400);
     throw new Error("Email has already been registered");
   }
@@ -75,7 +83,7 @@ if (referrer) {
 
   
    //send welcome mail
-  const subject = "Welcome to Nestlypay";
+  const subject = "Welcome to Auth";
   const send_to = email;
   const sent_from = process.env.EMAIL_USER;
   const reply_to = "noreply@nestlypay.com";
@@ -101,7 +109,7 @@ if (referrer) {
   }
 
   if (user) {
-    const { _id, name, email, photo, phone, isVerified, role } = user;
+    const { _id, name, email, photo, phone, isVerified, role, token } = user;
     res.status(201).json({
       _id,
       name,
@@ -110,11 +118,31 @@ if (referrer) {
       phone,
       isVerified,
       token,
+      referralCode: user.referralCode
     });
   } else {
     res.status(400);
     throw new Error("Invalid user data");
   }
+});
+
+// Referral link
+const myreferralLink = asyncHandler(async (req, res) => {
+  const referralLink = `${req.protocol}://${req.get('host')}/register?refferralCode=${req.user.referralCode}`;
+  res.json({ referralLink})
+
+})
+
+// Referral bonus
+const referralBonus = asyncHandler(async (req, res) => {
+  const { referralCode } = req.body;
+  const referrer = await User.findOne({ referralCode });
+  if (!referrer) {
+    return res.status(400).json({ message: 'Invalid referral code' });
+  }
+  referrer.referralCount++;
+  await referrer.save();
+  res.json({ success: true });
 });
 
 
@@ -819,6 +847,8 @@ const sendAutomatedEmail = asyncHandler(async (req, res) => {
 
 module.exports = {
   registerUser,
+  referralBonus,
+  myreferralLink,
   sendVerificationEmail,
   verifyUser,
   loginUser,
